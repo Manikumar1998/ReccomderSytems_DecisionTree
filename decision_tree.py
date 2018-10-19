@@ -24,7 +24,7 @@ def split(dataset, f_index, value):
     Y = dataset["Y"]
     
     for x,y in zip(X,Y):
-        if x[f_index] == value:
+        if x[f_index] == '0':
             left["X"].append(x)
             left["Y"].append(y)
             
@@ -109,11 +109,12 @@ def construct_decision_tree(dataset, classes, features, depth, depth_limit, rand
     _gains = []
     for f_index in features:
         information_gain = []
-        for value in ['0', '1']:
-            gain, groups = cal_gain(dataset, classes, f_index, value)
-            information_gain.append({'value':value,
-                                     'gain': gain,
-                                     'groups':groups})
+
+        value = None
+        gain, groups = cal_gain(dataset, classes, f_index, value)
+        information_gain.append({'value':value,
+                                 'gain': gain,
+                                 'groups':groups})
             
         max_gain_pair = max(information_gain, key=lambda i:i['gain'])
         _gains.append({'f_index':f_index,

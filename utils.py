@@ -70,7 +70,7 @@ def classify(root, X_data):
                 classified.append(node._class)
                 break
             else:
-                if x[node.feature] == node.value:
+                if x[node.feature] == '0':
                     node = node.left
                 else:
                     node = node.right
