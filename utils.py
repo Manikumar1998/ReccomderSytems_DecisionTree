@@ -13,12 +13,12 @@ def read_data():
     users_data = [[] for _ in xrange(len(user_ids))]
 
     for user in data:
-        users_data[int(user[0])-1].append({'item_id':int(user[1]), 'rating':user[2]})
+        users_data[int(user[0])-1].append({'item_id':int(user[1]), 'rating':int(user[2])})
 
     with open('datasets/u.item', 'r') as item_fp:
         for line in item_fp:
             item = line.strip().split('|')
-            ratings = item[-19:]
+            ratings = map(int, item[-19:])
             items_data.append({"name": item[1], "genres":ratings})
             
     return users_data, items_data
@@ -71,8 +71,50 @@ def classify(root, X_data):
                 classified.append(node._class)
                 break
             else:
-                if x[node.feature] == '0':
+                if x[node.feature] == 0:
                     node = node.left
                 else:
                     node = node.right
     return classified
+
+def get_recommendations(predictions, k):
+    index_pred_pair = []
+    for index, pred in enumerate(predictions):
+        index_pred_pair.append((index, pred))
+
+    index_pred_pair.sort(reverse=True, key = lambda i:i[1])
+    indices = [i[0] for i in index_pred_pair[:k]]
+    return indices
+
+def construct_confusion_matrix(pred, actual, indices):
+    tp, fp, fn, tn = 0, 0, 0, 0
+    for i in indices:
+        if actual[i] >= 3:
+            if pred[i] >= 3:
+                tp += 1
+            else:
+                fn += 1
+        else:
+            if pred[i] >= 3:
+                fp += 1
+            else:
+                tn += 1
+
+    confusion_matrix = {}
+    confusion_matrix['tp'] = tp
+    confusion_matrix['fp'] = fp
+    confusion_matrix['fn'] = fn
+    confusion_matrix['tn'] = tn
+
+    return confusion_matrix
+
+def calc_precision(confusion_matrix):
+    tp = confusion_matrix['tp']
+    fp = confusion_matrix['fp']
+    return float(tp)/(tp + fp)
+
+def calc_recall(confusion_matrix):
+    tp = confusion_matrix['tp']
+    fn = confusion_matrix['fn']
+    return float(tp)/(tp + fn)
+        
