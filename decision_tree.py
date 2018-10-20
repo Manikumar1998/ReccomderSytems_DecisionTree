@@ -3,16 +3,14 @@ from collections import Counter
 import utils
 
 class Node(object):
-    def __init__(self, feature, value, left=None, right=None):
+    def __init__(self, feature, left=None, right=None):
         self.feature = feature
-        self.value = value
         self.left = left
         self.right = right
 
     def __repr__(self):
-        node_repr = "Node(f_index:{} - value:{})"
-        reprs = node_repr.format(str(self.feature),
-                         str(self.value))
+        node_repr = "Node(f_index:{})"
+        reprs = node_repr.format(str(self.feature))
         return reprs
 
 class LeafNode(object):
@@ -24,14 +22,14 @@ class LeafNode(object):
         reprs = node_repr.format(str(self._class))
         return reprs
 
-def split(dataset, f_index, value):
+def split(dataset, f_index):
     left = {"X":[], "Y": []}
     right = {"X": [], "Y": []}
     X = dataset["X"]
     Y = dataset["Y"]
     
     for x,y in zip(X,Y):
-        if x[f_index] == '0':
+        if x[f_index] == 0:
             left["X"].append(x)
             left["Y"].append(y)
             
@@ -41,8 +39,8 @@ def split(dataset, f_index, value):
     groups = {'left':left, 'right':right}
     return groups
 
-def get_entropy_of_split(dataset, f_index, value, classes):
-    groups_dict = split(dataset, f_index, value)
+def get_entropy_of_split(dataset, f_index, classes):
+    groups_dict = split(dataset, f_index)
     groups = []
     groups.append(groups_dict['left'])
     groups.append(groups_dict['right'])
@@ -65,7 +63,7 @@ def get_entropy_of_split(dataset, f_index, value, classes):
         entropy += normal_size*group_entropy
     return entropy, groups_dict
 
-def cal_gain(dataset, classes, f_index, value):
+def cal_gain(dataset, classes, f_index):
     classes_count = Counter(dataset['Y'])
     total_count = len(dataset['Y'])
     initial_entropy = 0
@@ -74,7 +72,7 @@ def cal_gain(dataset, classes, f_index, value):
         prob = float(classes_count[_class])/total_count
         initial_entropy -= prob*np.log2(prob)
 
-    entropy_of_split, groups = get_entropy_of_split(dataset, f_index, value, classes)
+    entropy_of_split, groups = get_entropy_of_split(dataset, f_index, classes)
     gain = initial_entropy-entropy_of_split
     return gain, groups
 
@@ -84,55 +82,44 @@ def majority_voting(dataset):
     _class = max(Y_count)
     return _class
 
-def construct_decision_tree(dataset, classes, features, depth, depth_limit, randomtree=False):
-    #Stop when depth is reached
-    if depth_limit:
-        if depth == depth_limit:
-            _class = majority_voting(dataset)
-            return LeafNode(_class)
-
+def construct_decision_tree(dataset, classes, features, depth, depth_limit):
+    # print depth, 
     #Stop when no samples left
     if not dataset['X']:
+        # print 'b',
         return None
+
+    #Stop when depth is reached
+    if depth_limit:        
+        if depth == depth_limit:
+            # print 'c',
+            _class = majority_voting(dataset)
+            return LeafNode(_class)
         
-    #Stop when all belong to same class                
+    #Stop when all candidtes belong to the same class                
     if len(classes) == 1:
+        # print 'd',
         return LeafNode(classes[0])
 
-    #Stop when no features are left
+    #Stop when no features are left to further classify
     if not features:
+        # print 'e',
         _class = majority_voting(dataset)
         return LeafNode(_class)
         
     X = dataset['X']
     Y = dataset['Y']
 
-    _gains = []
     for f_index in features:
         information_gain = []
-
-        value = None
-        gain, groups = cal_gain(dataset, classes, f_index, value)
-        information_gain.append({'value':value,
+        gain, groups = cal_gain(dataset, classes, f_index)
+        information_gain.append({'f_index': f_index,
                                  'gain': gain,
-                                 'groups':groups})
-            
-        max_gain_pair = max(information_gain, key=lambda i:i['gain'])
-        _gains.append({'f_index':f_index,
-                       'max_gain':max_gain_pair['gain'],
-                       'value':max_gain_pair['value'],
-                       'groups':max_gain_pair['groups']})
+                                 'groups': groups})
 
-    if not randomtree:
-        selected = max(_gains, key=lambda i:i['max_gain'])
-
-    else:
-        sorted(_gains, key=lambda i:i['max_gain'])
-        top_length = int(np.sqrt(len(features)))
-        selected = _gains[random.randint(0, top_length)]
-        
-    node = Node(selected['f_index'],
-                selected['value'])
+    selected = max(information_gain, key=lambda i:i['gain'])
+    
+    node = Node(selected['f_index'])
     
     new_features = []
     for f_index in features:
