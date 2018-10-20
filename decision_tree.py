@@ -143,4 +143,11 @@ def construct_decision_tree(dataset, classes, features, depth, depth_limit):
                                          new_features,
                                          depth+1,
                                          depth_limit)
+    if node.left == None:
+        node = node.right
+    elif node.right == None:
+        node = node.left
+
     return node
+    
+    
