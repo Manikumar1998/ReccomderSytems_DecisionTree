@@ -1,4 +1,5 @@
 import random
+from decision_tree import LeafNode
 
 def read_data():
     items_data = []
@@ -66,7 +67,7 @@ def classify(root, X_data):
     for x in X_data:
         node = root
         while(node != None):
-            if node._class != None:
+            if isinstance(node, LeafNode):
                 classified.append(node._class)
                 break
             else:

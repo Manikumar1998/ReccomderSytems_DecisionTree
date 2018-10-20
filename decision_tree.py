@@ -3,18 +3,25 @@ from collections import Counter
 import utils
 
 class Node(object):
-    def __init__(self, feature, value, left=None, right=None, _class=None):
+    def __init__(self, feature, value, left=None, right=None):
         self.feature = feature
         self.value = value
         self.left = left
         self.right = right
+
+    def __repr__(self):
+        node_repr = "Node(f_index:{} - value:{})"
+        reprs = node_repr.format(str(self.feature),
+                         str(self.value))
+        return reprs
+
+class LeafNode(object):
+    def __init__(self, _class):
         self._class = _class
 
     def __repr__(self):
-        node_repr = "Node(f_index:{} - value:{} - class:{})"
-        reprs = node_repr.format(str(self.feature),
-                         str(self.value),
-                         str(self._class))
+        node_repr = "LeafNode(class: {})"
+        reprs = node_repr.format(str(self._class))
         return reprs
 
 def split(dataset, f_index, value):
@@ -82,9 +89,7 @@ def construct_decision_tree(dataset, classes, features, depth, depth_limit, rand
     if depth_limit:
         if depth == depth_limit:
             _class = majority_voting(dataset)
-            return Node(None,
-                        None,
-                        _class=_class)
+            return LeafNode(_class)
 
     #Stop when no samples left
     if not dataset['X']:
@@ -92,16 +97,12 @@ def construct_decision_tree(dataset, classes, features, depth, depth_limit, rand
         
     #Stop when all belong to same class                
     if len(classes) == 1:
-        return Node(None,
-                    None,
-                    _class=classes[0])
+        return LeafNode(classes[0])
 
     #Stop when no features are left
     if not features:
         _class = majority_voting(dataset)
-        return Node(None,
-                    None,
-                    _class=_class)
+        return LeafNode(_class)
         
     X = dataset['X']
     Y = dataset['Y']
@@ -131,8 +132,7 @@ def construct_decision_tree(dataset, classes, features, depth, depth_limit, rand
         selected = _gains[random.randint(0, top_length)]
         
     node = Node(selected['f_index'],
-                selected['value'],
-                _class=None)        
+                selected['value'])
     
     new_features = []
     for f_index in features:
