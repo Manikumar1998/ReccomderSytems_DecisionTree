@@ -82,28 +82,23 @@ def majority_voting(dataset):
     _class = max(Y_count)
     return _class
 
-def construct_decision_tree(dataset, classes, features, depth, depth_limit):
-    # print depth, 
+def construct_decision_tree(dataset, classes, features, depth, depth_limit=None):
     #Stop when no samples left
     if not dataset['X']:
-        # print 'b',
         return None
 
     #Stop when depth is reached
     if depth_limit:        
         if depth == depth_limit:
-            # print 'c',
             _class = majority_voting(dataset)
             return LeafNode(_class)
         
     #Stop when all candidtes belong to the same class                
     if len(classes) == 1:
-        # print 'd',
         return LeafNode(classes[0])
 
     #Stop when no features are left to further classify
     if not features:
-        # print 'e',
         _class = majority_voting(dataset)
         return LeafNode(_class)
         

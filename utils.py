@@ -1,4 +1,5 @@
 import random
+import matplotlib.pyplot as plt
 from decision_tree import LeafNode
 
 def read_data():
@@ -64,7 +65,8 @@ def accuracy(pred, actual):
 
 def classify(root, X_data):
     classified = []
-    for x in X_data:
+    
+    for x in X_data:    
         node = root
         while(node != None):
             if isinstance(node, LeafNode):
@@ -86,35 +88,76 @@ def get_recommendations(predictions, k):
     indices = [i[0] for i in index_pred_pair[:k]]
     return indices
 
-def construct_confusion_matrix(pred, actual, indices):
-    tp, fp, fn, tn = 0, 0, 0, 0
-    for i in indices:
-        if actual[i] >= 3:
-            if pred[i] >= 3:
+def compute_metrics(pred, actual, top_indices):
+    tp, fp, all_good = 0, 0, 0
+    indices = range(len(pred))
+    
+    for i in top_indices:
+        if pred[i] >= 3:
+            if actual[i] >= 3:
                 tp += 1
             else:
-                fn += 1
-        else:
-            if pred[i] >= 3:
                 fp += 1
-            else:
-                tn += 1
+    for i in indices:
+        if actual[i] >= 3:
+            all_good += 1
 
-    confusion_matrix = {}
-    confusion_matrix['tp'] = tp
-    confusion_matrix['fp'] = fp
-    confusion_matrix['fn'] = fn
-    confusion_matrix['tn'] = tn
+    precision = calc_precision(tp, fp)
+    recall = calc_recall(tp, all_good)
+    return precision, recall
 
-    return confusion_matrix
+def calc_precision(tp, fp):
+    try:
+        return float(tp)/(tp + fp)
+    except:
+        return 1.0
 
-def calc_precision(confusion_matrix):
-    tp = confusion_matrix['tp']
-    fp = confusion_matrix['fp']
-    return float(tp)/(tp + fp)
-
-def calc_recall(confusion_matrix):
-    tp = confusion_matrix['tp']
-    fn = confusion_matrix['fn']
-    return float(tp)/(tp + fn)
+def calc_recall(tp, all_good):
+    try:
+        return float(tp)/all_good
+    except:
+        return 1.0
         
+def calc_MAE(pred, actual):
+    n = len(pred)
+    assert len(pred) == len(actual)
+    sum = 0 
+    for p, r in zip(pred, actual):
+        sum += abs(p - r)
+
+    res = float(sum)/n
+    return res
+
+def calc_RMSE(pred, actual):
+    n = len(pred)
+    assert len(pred) == len(actual)
+    sum = 0
+    for p, r in zip(pred, actual):
+        sum += (p - r)**2
+    
+    res = (float(sum)/n)**0.5
+    return res            
+
+def plot_graph(precision_dict, recall_dict):
+    n = len(precision_dict.keys())
+    K = []
+    avg_precision = []
+    avg_recall = []
+    for i in xrange(1, n+1):
+        K.append(i)
+        avg_precision.append(float(sum(precision_dict[i]))/len(precision_dict[i]))
+        avg_recall.append(float(sum(recall_dict[i]))/len(recall_dict[i]))
+
+    plt.xlabel('K')
+    plt.ylabel('Avg value')
+    plt.title('Precision and Recall')
+    precision_plot, = plt.plot(K, avg_precision, 'r', label='Average Precision')
+    recall_plot, = plt.plot(K, avg_recall, 'g', label = 'Average Recall')
+    plt.legend(handles=[precision_plot, recall_plot])
+    plt.show()
+
+def write_to_file(accuracy_arr):
+    fp = open('users_accuracy.txt', 'a')
+    for i in xrange(len(accuracy_arr)):
+        fp.write('User: {} - Test accuracy: {}\n'.format(i + 1, accuracy_arr[i]))
+    fp.close()
